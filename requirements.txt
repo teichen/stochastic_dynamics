@@ -1,0 +1,3 @@
+# LIBRARIES NECESSARY
+numpy == 1.16.2
+pytest == 7.0.1
