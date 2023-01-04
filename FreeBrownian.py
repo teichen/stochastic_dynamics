@@ -1,44 +1,35 @@
 import numpy as np
+from numpy import random
+from math import sqrt
+
+# set seed
+random.seed(10)
 
 def FreeBrownian(gamma, sigma, n, t):
     """
+    Args:
+        gamma (double): decay rate
+        sigma (double): noise covariance
+        n (int): number of trajectories
+        t (np.array): time vector
+
+    Returns:
+        p (np.array) dynamical momenta trajectories
     """
+    dt  = t[1] - t[0] # time interval
+    n_t = len(t)      # number of time points
 
-function p = brown_free(gam,sig,n,tvec)
+    p0 = sqrt(sigma / (2*gamma)) * random.rand(n, 1)
 
-% constants
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-h = 6.626*10^-34; % J*s
-hbar = h/(2*pi);
-c = 2.998*10^10; % cm/s
-kB = 1.38*10^-23; % J/K
-cmeV = 8065.541154; % 8065.541154 wavenumbers = 1 eV
-% temp = 300*kB/(h*c);
-amu = 1.66056*10^-27; % kg
+    p = np.zeros((n, n_t))
 
-% calculation
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for ii in range(n):
+        p[ii, 0] = p0[ii] # initial condition
 
-dt = tvec(2)-tvec(1); % time interval
-npts = length(tvec); % number of time points
+        f = sqrt(dt*sigma) * random.rand(n_t, 1) # trajectory of noise 
+        for jj in range(1, n_t):
+            p[ii, jj] = p[ii, jj-1] * (1 - gamma*dt) + f[jj-1] # Euler, Grigoriu
+            # p[ii, jj] = p[ii, jj-1] * (1 - gamma*dt/2) / (1+gamma*dt/2) + f[jj-1] # MID/BBK, Mishra and Schlick
 
-rng('shuffle');
-p0pts = 0 + sqrt(sig/(2*gam))*randn(n,1);
+    return p
 
-p = zeros(n,npts);
-
-for ii = 1:n
-    p(ii,1) = p0pts(ii); % initial condition
-
-    rng('shuffle')
-    fpts = 0 + sqrt(dt*sig)*randn(npts,1); % trajectory of noise 
-    for jj = 2:npts
-        p(ii,jj) = p(ii,jj-1)*(1-gam*dt) + fpts(jj-1); % Euler, Grigoriu
-        % p(ii,jj) = p(ii,jj-1)*(1-gam*dt/2)/(1+gam*dt/2) + fpts(jj-1); % MID/BBK, Mishra and Schlick
-    end
-    clear fpts;
-end
-
-clear x0pts p0pts;
-
-end
