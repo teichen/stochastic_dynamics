@@ -17,9 +17,9 @@ def Intensity(kubo):
         x (np.array)
         cx (np.array)
     """
-    N = 10000 # number of stochastic trajectories 
-    dx = 0.01 # time interval, x = t/\tau
-    Nx = 500  # number of time points
+    N  = 10000 # number of stochastic trajectories 
+    dx = 0.01  # time interval, x = t/\tau
+    Nx = 500   # number of time points
 
     x = (0:1:(Nx-1))*dx # time vector
              
@@ -35,20 +35,21 @@ def Intensity(kubo):
     dF = sqrt(dx) * random.rand(N, Nx)
     F  = np.cumsum(dF, 2)
 
-    y(1:N,1) = y0; % initial condition
+    y[:N, 0] = y0 # initial condition
 
-    for kk = 2:Nx
-        % Euler-Maruyama method:
-        y(:,kk) = y(:,kk-1)*(1-dx) + sqrt(2)*kubo*dF(:,kk-1); 
+    for kk in range(1, Nx):
+        # Euler-Maruyama method:
+        y[:, kk] = y[:, kk-1] * (1-dx) + sqrt(2)*kubo*dF[:, kk-1]
 
-    Gx = zeros(N,Nx); 
-    for jj = 1:N 
-        Gx(jj,:) = Gx(jj,:) + exp(-1i*cumsum(y(jj,:)*dx));
+    Gx = np.zeros((N, Nx))
+    for jj in range(N):
+        Gx[jj, :] = Gx[jj, :] + np.exp(-1i * np.cumsum(y[jj, :]*dx))
 
-    cx = zeros(Nx/2,Nx/2);
-    for ii = 1:(Nx/2-1)
-        for jj = [1:(ii-1) (ii+1):Nx/2]
-            cx(ii,jj) = mean(real(Gx(:,ii)).*real(Gx(:,ii+jj)));
-
+    cx = np.zeros((Nx/2, Nx/2))
+    for ii in range((Nx/2-1)):
+        for jj in range(ii-1):
+            cx[ii, jj] = np.mean(real(Gx[:, ii]) * real(Gx[:, ii+jj]))
+        for jj in range(ii, Nx/2):
+            cx[ii, jj] = np.mean(real(Gx[:, ii]) * real(Gx[:, ii+jj]))
 
     returns x, cx

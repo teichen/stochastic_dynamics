@@ -1,35 +1,37 @@
 import numpy as np
+from numpy import random
+from math import sqrt
 
 def Langevin():
     """
+    
+    Args:
+
+    Returns:
+        t (np.array): time array
+        y (np.array): 
     """
+    Nt = 100
+    dt = 1
+    N  = 10
+    g  = 1
+    s2 = 1
 
-function Langevin_SDE
+    t  = (0:1:(Nt - 1)) * dt # time vector
+ 
+    f = np.zeros((N, Nt))
+    for ii in range(N):
+        f[ii, :] = sqrt(dt*s2) * random.rand(Nt, 1) # trajectory of noise 
 
-Nt = 100;
-dt = 1;
+    y0 = sqrt(s2/(2*g)) * random.rand(N, 1) # initial conditions
 
-N = 10;
+    y = y0[0]   
 
-g = 1;
-s2 = 1;
+    # dX = F(t,X)dt + G(t,X)dW
 
-f = zeros(N,Nt);
-for ii = 1:N
-    rng('shuffle')
-    f(ii,:) = 0 + sqrt(dt*s2)*randn(Nt,1); % trajectory of noise 
-end
+    for kk in range(1, Nt):
+        # Euler-Maruyama method:
+        # y[:, kk] = y[:, kk-1] + dx * F[:, kk-1] + G[:, kk-1] * dW[kk-1]
+        y[:, kk] = y[:, kk-1] * (1 - g * dx) + f[kk-1]
 
-rng('shuffle');
-X0 = 0 + sqrt(s2/(2*g))*randn(N,1); % initial conditions
-
-X = X0(1);   
-
-F = @(t,X) (-g) * X;
-G = @(t,X) diag(X) * diag(sqrt(s2));
-
-SDE = sde(F, G, 'StartState', X)
-
-[paths,times] = simulate(SDE,Nt, 'DeltaTime', dt);
-
-end
+    return t, y
