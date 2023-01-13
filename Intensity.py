@@ -16,6 +16,7 @@ def Intensity(kubo):
     Returns:
         x (np.array)
         cx (np.array)
+        Gx (np.array)
     """
     N  = 10000 # number of stochastic trajectories 
     dx = 0.01  # time interval, x = t/\tau
@@ -52,4 +53,4 @@ def Intensity(kubo):
         for jj in range(ii, Nx/2):
             cx[ii, jj] = np.mean(real(Gx[:, ii]) * real(Gx[:, ii+jj]))
 
-    returns x, cx
+    returns x, cx, Gx

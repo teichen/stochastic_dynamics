@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import random
+from math import sqrt, cos
 
 def SubEnsembles(kubo):
     """
@@ -31,88 +32,66 @@ def SubEnsembles(kubo):
     dx = 0.001 # time interval, x = t/\tau
     Nx = 200   # number of time points
 
-    x = (0:1:(Nx-1))*dx # time vector
-             
-    cxmean    = np.zeros((len(N), Nx)) # response kernel for each N(ii)
-    cxvar     = np.zeros((len(N), Nx))
-    cxstdev   = np.zeros((len(N), Nx))
+    x = np.linspace(0, Nx*dx, Nx) # time vector
+
+    cx_mean    = np.zeros((len(N), Nx)) # response kernel for each N(ii)
+    cx_var     = np.zeros((len(N), Nx))
+    cx_std   = np.zeros((len(N), Nx))
     std_error = np.zeros((len(N), Nx))
 
-    for ii = [length(N) 1:(length(N)-1)]
+    for ii in range(len(N)):
         
-        n = N(ii);
+        n = N[ii]
 
         # the stochastic part of the transition frequency is simulated with
         # a random variable in the zero stepsize limit, y
         y = np.zeros((n, Nx)) # stochastic frequency shift, y = \tau \delta \nu
         
-        y0pts = 0 + kubo*randn(n,1);
+        y0 = kubo * random.rand(n, 1)
 
-        dF = zeros(n,Nx);
-        F = zeros(n,Nx); % Random force applied to transition frequency
+        dF = np.zeros((n, Nx))
+        F  = np.zeros((n, Nx)) # Random force applied to transition frequency
         
-        dF = sqrt(dx)*randn(n,Nx);
-        F = cumsum(dF,2);
-     
-        % plot(x,F(1,:))
-        % plot(x,mean(F))     
-        
-        % Ito integration of FdF:
-        % ito = sum([0,F(1,1:Nx-1)].*dF(1,:));
-        % abs(ito -0.5*(F(1,Nx)^2 - t(Nx))); % error
-        
-        % Stratonovich integration of FdF:
-        % strat = sum((0.5*([0,F(1,1:Nx-1)]+F(1,:) + 0.5*sqrt(dx)*randn(1,Nx)).*dF(1,:))); 
-        % abs(strat - 0.5*F(1,Nx)^2); % error
-        
-        y(1:n,1) = y0pts; % initial condition
-
-        for kk = 2:Nx
-            % Euler-Maruyama method:
-            y(:,kk) = y(:,kk-1)*(1-dx) + sqrt(2)*kubo*dF(:,kk-1); 
-
-        
-        n_batch = 10; 
-        for jj = 1:(n/n_batch)
+        dF = sqrt(dx) * random.rand(n, Nx)
+        F  = np.cumsum(dF, 2)
             
-            cxtraj = zeros(n_batch,Nx);
-            cxmean_batch = zeros(1,Nx);
-            cxvar_batch = zeros(1,Nx);
-            cxstdev_batch = zeros(1,Nx);
-            
-            for kk = 1:n_batch
-                % cx(ii,:) = cx(ii,:) + (1/n)*exp(-1i*cumtrapz(x,y(jj,:)));
+        y[:n, 0] = y0 # initial condition
 
-                cxtraj(kk,:) = exp(-1i*cumsum(y(n_batch*(jj-1)+kk,:))*dx); 
-                cxmean_batch = cxmean_batch + (1/n_batch)*cxtraj(kk,:);
+        for kk in range(1, Nx):
+            # Euler-Maruyama method:
+            y[:, kk] = y[:, kk-1] * (1-dx) + sqrt(2) * kubo * dF[:, kk-1)]
 
-            cxmean(ii,:) = cxmean(ii,:) + (n_batch/n)*cxmean_batch;         
+        n_batch = 10
+        for jj in range(n/n_batch):
             
-            cxmean(ii,:) = cxmean(ii,:)/cxmean(ii,1); % global mean
+            cx_traj       = np.zeros((n_batch, Nx))
+            cx_mean_batch = np.zeros((1, Nx))
+            cx_var_batch  = np.zeros((1, Nx))
+            cx_std_batch  = np.zeros((1, Nx))
             
+            for kk in range(n_batch):
+                cx_traj[kk, :] = np.exp(-1i * np.cumsum(y[n_batch*jj + kk, :])*dx);
+                cx_mean_batch  = cx_mean_batch + (1/n_batch) * cx_traj[kk, :]
 
-        for jj = 1:n
-            % bias-corrected sample variance relative to global mean
-            cxvar(ii,:) = cxvar(ii,:) + (1/(n-1))*...
-                        (cos(cumsum(y(jj,:))*dx) - real(cxmean(ii,:))).^2;
-        cxstdev(ii,:) = sqrt(cxvar(ii,:));
+            cx_mean[ii, :] = cx_mean[ii, :] + (n_batch/n) * cx_mean_batch
+            cx_mean[ii, :] = cx_mean[ii, :] / cx_mean[ii, 0] # global mean
+
+
+        for jj in range(n):
+            # bias-corrected sample variance relative to global mean
+            cx_var[ii, :] = cx_var[ii, :] + (1 / (n-1)) * (cos(np.cumsum(y[jj, :]) * dx) - np.real(cx_mean[ii, :])) ** 2
+
+        cx_std[ii, :] = sqrt(cx_var[ii, :])
         
-        % standard error of a sample size n estimates the standard deviation of
-        % the sample mean based on the population mean
-        std_error(ii,:) = cxstdev(ii,:)/sqrt(n);
-        
-        toc
+        # standard error of a sample size n estimates the standard deviation of
+        # the sample mean based on the population mean
+        std_error[ii, :] = cx_std[ii, :] / sqrt(n)
 
+    b = np.zeros((Nx, 1, len(N)))
+    for ii in range(len(N)):
+        b[:, 0, ii] = std_error[ii, :] # symmetric shaded region (+- std_error)
 
-    b = zeros(Nx,1,length(N));
-    for ii = 1:length(N)
-        b(:,1,ii) = std_error(ii,:); % symmetric shaded region (+- std_error)
+    # the means are for N = [10 100 1000 10000] subensembles of stochastic trajectories
+    # the std_error is calculated for each N(ii) group relative to each N(ii) mean
 
-    % the means are for N = [10 100 1000 10000] subensembles of stochastic trajectories
-    % the std_error is calculated for each N(ii) group relative to each N(ii) mean
-
-    [l,p]=boundedline(x,[cxmean(1,:);cxmean(2,:);cxmean(3,:);cxmean(4,:)],...
-        b,'transparency',0.2);
-    hold on;
-
-
+    return x, cx_mean, b
