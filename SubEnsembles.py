@@ -27,16 +27,16 @@ def SubEnsembles(kubo):
 
     Returns:
     """
-    N = [10 100 1000 10000] # number of stochastic trajectories
+    N = [10, 100, 1000, 10000] # number of stochastic trajectories
 
     dx = 0.001 # time interval, x = t/\tau
     Nx = 200   # number of time points
 
     x = np.linspace(0, Nx*dx, Nx) # time vector
 
-    cx_mean    = np.zeros((len(N), Nx)) # response kernel for each N(ii)
-    cx_var     = np.zeros((len(N), Nx))
-    cx_std   = np.zeros((len(N), Nx))
+    cx_mean   = np.zeros((len(N), Nx)) # response kernel for each N(ii)
+    cx_var    = np.zeros((len(N), Nx))
+    cx_std    = np.zeros((len(N), Nx))
     std_error = np.zeros((len(N), Nx))
 
     for ii in range(len(N)):

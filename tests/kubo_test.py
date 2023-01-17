@@ -2,7 +2,7 @@ import sys
 sys.path.insert(1, '../')
 import numpy as np
 from numpy import random
-from math import sqrt
+from math import sqrt, pi
 import unittest
 from Diffusion import Diffusion
 from FiniteGreen import FiniteGreen
@@ -25,7 +25,7 @@ class KuboTester(unittest.TestCase):
         dt    = 0.001 # time interval
         npts  = 50000 # number of time points
         ntraj = 1000  # number of stochastic trajectories
-        t     = (0:1:(npts-1))*dt # time vector
+        t     = np.linspace(0, npts*dt, npts) # time vector
 
         x0 = sqrt(pi * g0 / (4*zet*pow(w0, 3))) * random.rand(ntraj, 1)
         p0 = sqrt(pi * g0 / (4*zet*w0)) * random.rand(ntraj, 1)
@@ -47,41 +47,20 @@ class KuboTester(unittest.TestCase):
             mux    = np.mean(x[:, jj])
             x2[jj] = np.mean((x[:, jj] - mux) ** 2) 
 
-        h = plot(t,x2,'-b');
-
         x, cx, g_traj = Intensity(kubo)
-        g = FiniteGreen(g_traj, 10)
         k  = 10
         dt = 0.0001 # kap = 10
 
-        # get the Kubo result from the simulated data
-        G = mean(g);
-        t = 0:999;
-        %Infer the time axis.
-        t = t*dt;
+        # kubo = exp(-(k^2)*(exp(-t)-1+t))
 
-        kubo = exp(-(k^2)*(exp(-t)-1+t));
+        # Estimate the standard deviation from the mean when samples are drawn 10 at a time.
 
-        %Estimate the standard deviation from the mean when samples are drawn 10 at a
-        %time.
+        n_samples = 10
+        n_batches = 500
+       
+        g_std = FiniteGreenBatch(g_traj, n_samples, n_batches)
 
-        err = g10(g,500);
-
-        # assert dynamics independent of batch size
-        % plot(t,g10(g,100),t,g10(g,200),t,g10(g,500))
-
-        h = plot(t,GN(g,10),'-b',t,GN(g,10),'-b',t,kubo,'-r');
-        function g10 = g10(g,nsamples)
-
-        G = mean(g); % global average of g
-        delta_g = zeros(1,length(G));
-
-        for ii = 1:nsamples
-            gii = GN(g,10); % average of 10 randomly selected trajectories of g
-            delta_g = delta_g + (gii - G).^2; 
-
-        g10 = delta_g/nsamples; % variance relative to the global mean
-        g10 = sqrt(g10); % standard deviation relative to the global mean
+        # TODO: assert dynamics independent of batch size
 
         # Benchmark of Sec. 1.3 from R. Zwanzig's ``Nonequilibrium Statistical Mechanics"
 
@@ -110,6 +89,21 @@ class KuboTester(unittest.TestCase):
         h = plot(t,x2,'-b');
 
         h = plot(t(1:(npts-1)),diff(x2),'-b',t(1:(npts-1)),dt*(2*temp/gam),'-g'); 
+
+function FiniteGreenBatch(g_traj, n_samples, n_batches):
+    """
+    """
+    G = np.mean(g)
+    
+    g = np.zeros((n_batches, len(t)))
+    for ii in range(n_batches):
+        g[ii, :] += FiniteGreen(g_traj, n_samples)
+
+    g_std = np.zeros((1, len(t)))
+    for idt in range(len(t)):
+        g_std[ii] = np.std(g[:, idt])
+
+    return g_std
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(KuboTester)

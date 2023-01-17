@@ -14,20 +14,15 @@ def FiniteGreen(g, n):
     Returns:
         GN (np.array) finite average of a Green function
     """
-    g_n = len(g)
-    t   = len(g[0])
+    n_g = len(g)
+    n_t = len(g[0])
     
-    # Choose a random number between 1 and 10.
+    samples = random.randint(0, n_g, n)
 
-    samples = random.rand(1, n)
-
-    GN = np.zeros((1, t))
+    GN = np.zeros((1, n_t))
 
     for ii in range(n):
-        sample = samples[ii] * g_n # Pick this sample of G(t).
-        sample = round(sample)
-        if(sample == 0):
-            sample = g_n
+        sample = samples[ii] # Pick this sample of G(t).
         GN = GN + g[sample, :]
 
     GN = GN / n # average of n randomly selected trajectories of g
