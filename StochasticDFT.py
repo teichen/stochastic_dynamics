@@ -50,12 +50,12 @@ def StochasticDFT():
     domega = FreeBrownian(gamS, sigS, N, t) # stochastic frequency trajectories
 
     for jj in range(N):
-        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1i * vibfreqS * t - 1i * np.cumtrapz(t, domega[jj, :]))
+        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1j * vibfreqS * t - 1j * np.cumtrapz(t, domega[jj, :]))
 
     domega = FreeBrownian(gamAS, sigAS, N, t) # stochastic frequency trajectories
 
     for jj = range(N):
-        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1i * vibfreqAS * t - 1i * np.cumtrapz(t, domega[jj,:]))
+        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1j * vibfreqAS * t - 1j * np.cumtrapz(t, domega[jj,:]))
 
     # calculate the reciprocal response for time windows of duration tau
     Ntau = Nt / 4

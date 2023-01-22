@@ -19,7 +19,7 @@ def FiniteGreen(g, n):
     
     samples = random.randint(0, n_g, n)
 
-    GN = np.zeros((1, n_t))
+    GN = np.zeros((n_t, ))
 
     for ii in range(n):
         sample = samples[ii] # Pick this sample of G(t).

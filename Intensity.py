@@ -22,8 +22,8 @@ def Intensity(kubo):
     dx = 0.01  # time interval, x = t/\tau
     Nx = 500   # number of time points
 
-    x = (0:1:(Nx-1))*dx # time vector
-             
+    x = np.linspace(0, Nx*dx, Nx) # time vector    
+
     # the stochastic part of the transition frequency is simulated with
     # a random variable in the zero stepsize limit, y
     y = np.zeros((N, Nx)) # stochastic frequency shift, y = \tau \delta \nu
@@ -34,9 +34,9 @@ def Intensity(kubo):
     F  = np.zeros((N, Nx)) # Random force applied to transition frequency
 
     dF = sqrt(dx) * random.rand(N, Nx)
-    F  = np.cumsum(dF, 2)
+    F  = np.cumsum(dF, 1)
 
-    y[:N, 0] = y0 # initial condition
+    y[:N, 0] = y0[:, 0] # initial condition
 
     for kk in range(1, Nx):
         # Euler-Maruyama method:
@@ -44,13 +44,13 @@ def Intensity(kubo):
 
     Gx = np.zeros((N, Nx))
     for jj in range(N):
-        Gx[jj, :] = Gx[jj, :] + np.exp(-1i * np.cumsum(y[jj, :]*dx))
+        Gx[jj, :] = Gx[jj, :] + np.exp(-1j * np.cumsum(y[jj, :]*dx))
 
-    cx = np.zeros((Nx/2, Nx/2))
-    for ii in range((Nx/2-1)):
+    cx = np.zeros((int(Nx/2), int(Nx/2)))
+    for ii in range((int(Nx/2)-1)):
         for jj in range(ii-1):
-            cx[ii, jj] = np.mean(real(Gx[:, ii]) * real(Gx[:, ii+jj]))
-        for jj in range(ii, Nx/2):
-            cx[ii, jj] = np.mean(real(Gx[:, ii]) * real(Gx[:, ii+jj]))
+            cx[ii, jj] = np.mean(np.real(Gx[:, ii]) * np.real(Gx[:, ii+jj]))
+        for jj in range(ii, int(Nx/2)):
+            cx[ii, jj] = np.mean(np.real(Gx[:, ii]) * np.real(Gx[:, ii+jj]))
 
-    returns x, cx, Gx
+    return x, cx, Gx

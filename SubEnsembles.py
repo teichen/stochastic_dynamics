@@ -53,9 +53,9 @@ def SubEnsembles(kubo):
         F  = np.zeros((n, Nx)) # Random force applied to transition frequency
         
         dF = sqrt(dx) * random.rand(n, Nx)
-        F  = np.cumsum(dF, 2)
+        F  = np.cumsum(dF, 1)
             
-        y[:n, 0] = y0 # initial condition
+        y[:n, 0] = y0[:, 0] # initial condition
 
         for kk in range(1, Nx):
             # Euler-Maruyama method:
@@ -70,7 +70,7 @@ def SubEnsembles(kubo):
             cx_std_batch  = np.zeros((1, Nx))
             
             for kk in range(n_batch):
-                cx_traj[kk, :] = np.exp(-1i * np.cumsum(y[n_batch*jj + kk, :])*dx);
+                cx_traj[kk, :] = np.exp(-1j * np.cumsum(y[n_batch*jj + kk, :])*dx);
                 cx_mean_batch  = cx_mean_batch + (1/n_batch) * cx_traj[kk, :]
 
             cx_mean[ii, :] = cx_mean[ii, :] + (n_batch/n) * cx_mean_batch

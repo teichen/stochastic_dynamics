@@ -21,7 +21,7 @@ def Diffusion(kubo):
     N  = 10000 #  number of stochastic trajectories 
     dx = 0.001 # time interval, x = t/\tau
     Nx = 9999  # number of time points
-    x  = (0:1:(Nx - 1)) * dx # time vector
+    x  = np.linspace(0, Nx*dx, Nx) # time vector
  
     # the stochastic part of the transition frequency is simulated with
     # a random variable in the zero stepsize limit, y
@@ -33,15 +33,15 @@ def Diffusion(kubo):
     F  = np.zeros((N, Nx)) # Random force applied to transition frequency
 
     dF = sqrt(dx) * random.rand(N, Nx)
-    F  = np.cumsum(dF, 2)
+    F  = np.cumsum(dF, 1)
 
-    y[1:N, 1] = y0 # initial condition
+    y[1:N, 0] = y0[:, 0] # initial condition
 
     for kk in range(1, Nx):
         # Euler-Maruyama method:
         y[:, kk] = y[:, kk-1] * (1 - dx) + sqrt(2) * kubo * dF[:, kk-1]
 
-    yint = np.cumsum(y, 2) 
+    yint = np.cumsum(y, 1) 
 
     # long-time average of first trajectory:
     y2_1 = np.zeros((1, Nx))
