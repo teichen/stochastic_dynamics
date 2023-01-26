@@ -4,9 +4,10 @@ import numpy as np
 from numpy import random
 from math import sqrt, pi
 import unittest
-from Diffusion import Diffusion
+from Langevin import Langevin
 from FiniteGreen import FiniteGreen
-from Intensity import Intensity
+from SubEnsembles import SubEnsembles
+from StochasticDFT import StochasticDFT
 
 class KuboTester(unittest.TestCase):
     """ test stochastic dynamics calculation """
@@ -24,20 +25,21 @@ class KuboTester(unittest.TestCase):
         self.temp = pi * self.g0 / (2*self.gam) # temperature
 
     def test_finite_batches(self):
+        """ Estimate the standard deviation from the mean when samples are drawn 10 at a time.
         """
-        """
-        kubo = sqrt(self.g0 / (2 * self.gam))
-        x, cx, g_traj = Intensity(kubo)
+        lgv = Langevin(self.gam, self.g0, self.ntraj, self.t)
+        Gx = lgv.Gx
 
-        # Estimate the standard deviation from the mean when samples are drawn 10 at a time.
-
-        n_samples = 3 # 10
-        n_batches = 10 # 500
+        n_samples = 10
+        n_batches = 20 # 500
        
-        g_std = self.FiniteGreenBatch(g_traj, n_samples, n_batches)
+        g_mean, g_std = self.FiniteGreenBatch(Gx, n_samples, n_batches)
 
-        # TODO: assert dynamics independent of batch size
+        # assert dynamics independent of batch size
+        for n_batches in [30, 40, 50]:
+            mean_test, std_test = self.FiniteGreenBatch(Gx, n_samples, n_batches)
 
+        # TODO: add asserts
 
     def test_zwanzig(self):
         """ Benchmark of Sec. 1.3 from R. Zwanzig's ``Nonequilibrium Statistical Mechanics"
@@ -101,11 +103,15 @@ class KuboTester(unittest.TestCase):
         for ii in range(n_batches):
             g[ii, :] += FiniteGreen(g_traj, n_samples)
 
+        g_mean = np.zeros((self.npts, ))
+        for idt in range(self.npts):
+            g_mean[idt] = np.mean(g[:, idt])
+
         g_std = np.zeros((self.npts, ))
         for idt in range(self.npts):
-            g_std[ii] = np.std(g[:, idt])
+            g_std[idt] = np.std(g[:, idt])
 
-        return g_std
+        return g_mean, g_std
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(KuboTester)

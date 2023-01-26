@@ -1,3 +1,4 @@
+import abc
 import numpy as np
 from numpy import random
 from math import sqrt
@@ -5,54 +6,31 @@ from math import sqrt
 # set seed
 random.seed(10)
 
-def Diffusion(kubo):
-    """ TODO
+class Diffusion:
+    __metaclass__ = abc.ABCMeta
 
-    reference:
-    A. Godec, R. Metzler, PRL 110 (2013), 020603
+    def __init__(self, gamma, sigma, n, t):
+        """ base class for all stochastic diffusion classes (with or without friction)
 
-    Args:
-        kubo (double): 
+            gamma (double): decay rate
+            sigma (double): noise covariance
+            n (int): number of trajectories
+            t (np.array): time vector
+        """
+        self.N  = n           # number of stochastic trajectories 
+        self.dx = t[1] - t[0] # time interval, x = t/\tau
+        self.Nx = len(t)      # number of time points
+        self.x  = t           # time vector
 
-    Returns:
-        x (np.array), y2 (np.array)
+        kubo = sqrt(sigma / (2 * gamma))
 
-    """
-    N  = 10000 #  number of stochastic trajectories 
-    dx = 0.001 # time interval, x = t/\tau
-    Nx = 9999  # number of time points
-    x  = np.linspace(0, Nx*dx, Nx) # time vector
- 
-    # the stochastic part of the transition frequency is simulated with
-    # a random variable in the zero stepsize limit, y
-    y = np.zeros((N, Nx)) # stochastic frequency shift, y = \tau \delta \nu
+        # a random variable in the zero stepsize limit, y
+        self.y  = np.zeros((self.N, self.Nx))
+        self.y0 = kubo * random.rand(self.N, 1)
 
-    y0 = kubo * random.rand(N, 1)
+        self.dF = np.zeros((self.N, self.Nx))
+        self.F  = np.zeros((self.N, self.Nx)) # Random force
 
-    dF = np.zeros((N, Nx))
-    F  = np.zeros((N, Nx)) # Random force applied to transition frequency
+        self.dF = sqrt(self.dx) * kubo * random.rand(self.N, self.Nx)
+        self.F  = np.cumsum(self.dF, 1)
 
-    dF = sqrt(dx) * random.rand(N, Nx)
-    F  = np.cumsum(dF, 1)
-
-    y[1:N, 0] = y0[:, 0] # initial condition
-
-    for kk in range(1, Nx):
-        # Euler-Maruyama method:
-        y[:, kk] = y[:, kk-1] * (1 - dx) + sqrt(2) * kubo * dF[:, kk-1]
-
-    yint = np.cumsum(y, 1) 
-
-    # long-time average of first trajectory:
-    y2_1 = np.zeros((1, Nx))
-    for ii in range(Nx - 2):
-        y2_1[ii] = np.trapz(x[:(Nx-ii)], (yint[(ii+1):Nx] - yint[:(Nx-ii)]) ** 2) / (x[Nx-1]-x[ii])
-
-    y2 = np.mean(yint ** 2) # subensemble average
-
-    # trim off the final time point
-    x    = np.delete(x, Nx, 1)
-    y2_1 = np.delete(y2_1, Nx, 1)
-    y2   = np.delete(y2, Nx, 1)
-
-    return x, y2

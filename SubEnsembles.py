@@ -59,7 +59,7 @@ def SubEnsembles(kubo):
 
         for kk in range(1, Nx):
             # Euler-Maruyama method:
-            y[:, kk] = y[:, kk-1] * (1-dx) + sqrt(2) * kubo * dF[:, kk-1)]
+            y[:, kk] = y[:, kk-1] * (1-dx) + sqrt(2) * kubo * dF[:, kk-1]
 
         n_batch = 10
         for jj in range(n/n_batch):

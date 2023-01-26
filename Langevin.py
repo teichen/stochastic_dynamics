@@ -1,37 +1,66 @@
 import numpy as np
 from numpy import random
 from math import sqrt
+from Diffusion import Diffusion
 
-def Langevin():
-    """
-    
-    Args:
+# set seed
+random.seed(10)
 
-    Returns:
-        t (np.array): time array
-        y (np.array): 
-    """
-    Nt = 100
-    dt = 1
-    N  = 10
-    g  = 1
-    s2 = 1
+class Langevin(Diffusion):
+    __test__ = False
 
-    t  = (0:1:(Nt - 1)) * dt # time vector
- 
-    f = np.zeros((N, Nt))
-    for ii in range(N):
-        f[ii, :] = sqrt(dt*s2) * random.rand(Nt, 1) # trajectory of noise 
+    def __init__(self, gamma, sigma, n, t):
+        super(Langevin, self).__init__(gamma, sigma, n, t)
+        """ diffusion via Langevin dynamics with friction
+         Args:
+            gamma (double): decay rate
+            sigma (double): noise covariance
+            n (int): number of trajectories
+            t (np.array): time vector       
+        """
+        self._stochastic_trajectories(gamma)
+        self.Gx, self.cx = self._intensity()
 
-    y0 = sqrt(s2/(2*g)) * random.rand(N, 1) # initial conditions
+    def _stochastic_trajectories(self, gamma):
+        """ reference:
+            A. Godec, R. Metzler, PRL 110 (2013), 020603
 
-    y = y0[0]   
+            Args:
+            gamma (double): decay rate
+        """
+        for ii in range(self.N):
+            self.y[ii, 0] = self.y0[ii, 0] # initial condition
 
-    # dX = F(t,X)dt + G(t,X)dW
+            f = self.dF[ii]
+            
+            for jj in range(1, self.Nx):
+                self.y[ii, jj] = self.y[ii, jj-1] * (1 - gamma * self.dx) + f[jj - 1] # Euler, Grigoriu
+                """
+                for context, diffusion subject to friction can be simulated by:
+                y[ii, jj] = y[ii, jj-1] * (1 - gamma * dx/2) / (1 + gamma * dx/2) + f[jj-1] # MID/BBK, Mishra and Schlick
+                y[ii, jj] = y[ii, jj-1] * (1 - dx) + sqrt(2) * kubo * dF[:, jj-1] # Euler-Maruyama method
+                """
 
-    for kk in range(1, Nt):
-        # Euler-Maruyama method:
-        # y[:, kk] = y[:, kk-1] + dx * F[:, kk-1] + G[:, kk-1] * dW[kk-1]
-        y[:, kk] = y[:, kk-1] * (1 - g * dx) + f[kk-1]
+    def _intensity(self):
+        """
+        reference:
+        G. Margolin, E. Barkai, JCP 121 (2004), 1566
 
-    return t, y
+        Args:
+
+        Returns:
+            Gx (np.array)
+            cx (np.array)
+        """
+        Gx = np.zeros((self.N, self.Nx))
+        for jj in range(self.N):
+            Gx[jj, :] = Gx[jj, :] + np.exp(-1j * np.cumsum(self.y[jj, :] * self.dx))
+
+        cx = np.zeros((int(self.Nx/2), int(self.Nx/2)))
+        for ii in range((int(self.Nx/2)-1)):
+            for jj in range(ii-1):
+                cx[ii, jj] = np.mean(np.real(Gx[:, ii]) * np.real(Gx[:, ii+jj]))
+            for jj in range(ii, int(self.Nx/2)):
+                cx[ii, jj] = np.mean(np.real(Gx[:, ii]) * np.real(Gx[:, ii+jj]))
+
+        return Gx, cx
