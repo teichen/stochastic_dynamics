@@ -41,6 +41,17 @@ class KuboTester(unittest.TestCase):
 
         # TODO: add asserts
 
+    def test_stochastic_dft(self):
+        """
+        """
+        f1 = 1160 # cm^-1
+        f2 = 1220
+        n  = 10 # 1000
+        g1 = 10
+        g2 = 20
+
+        t, ct, w, cw = StochasticDFT(f1, f2, g1, g2, n)
+
     def test_zwanzig(self):
         """ Benchmark of Sec. 1.3 from R. Zwanzig's ``Nonequilibrium Statistical Mechanics"
         """

@@ -1,7 +1,8 @@
 import numpy as np
 from numpy import fft as fft
-import constants as constants
-import Langevin as Langevin
+from Constants import Constants
+from math import pi
+from Langevin import Langevin
 
 def nextpow2(x):
     """
@@ -11,53 +12,50 @@ def nextpow2(x):
     else:
         return 2**(x - 1).bit_length()
 
-def StochasticDFT():
-    """
+def StochasticDFT(f1, f2, g1, g2, N):
+    """ stochastic DFT of two transition frequencies 
+        simulated with Langevin dynamics
     Args:
-
+        f1 (double): first transition frequency, e.g. 1160 cm^-1 for local symmetric stretch
+        f2 (double): second transition frequency
+        g1 (double): chemical friction for first vibration, e.g. 10
+        g2 (double): chemical friction for second vibration
+        N (int): number of oscillators, e.g. 1000
     Returns:
+        t (np.array)
+        ct (np.array)
+        w (np.array)
+        cw (np.array)
     """
-    constants = constants
-
-    N = 1000
+    constants = Constants()
 
     # ensemble and homogeneous limit
-    # two vibrations:
 
-    vibfreqS  = 1160 # 1160 cm^-1 for local symmetric stretch
-    vibfreqAS = 1220
+    kT = constants.kT / f1 # unitless
+    g1 = g1 / f1
+    g2 = g2 / f1
 
-    gamS  = 10 # chemical friction
-    gamAS = 20
+    s1 = 2 * kT * g1 # magnitude of thermal fluctuations
+    s2 = 2 * kT * g2
 
-    kT    = constants.kT / vibfreqS # unitless
-    gamS  = gamS / vibfreqS
-    gamAS = gamAS / vibfreqS
-
-    sigS  = 2 * kT * gamS # magnitude of thermal fluctuations
-    sigAS = 2 * kT * gamAS
-
-    vibfreqAS = vibfreqAS / vibfreqS # unitless
-    vibfreqS  = 1
+    f2 = f2 / f1 # unitless
+    f1 = 1
 
     dt = 0.025 # time interval
     Nt = 15000 # number of time points
-
-    t = np.linspace(0, Nt*dt, Nt) # time vector
+    t  = np.linspace(0, Nt*dt, Nt) # time vector
 
     ct = np.zeros((1, Nt)) # average response kernel
 
-    Langevin(gamS, sigS, N, t)
-    domega = Langevin.y # stochastic frequency trajectories
+    lgv1 = Langevin(g1, s1, N, t)
+    lgv2 = Langevin(g2, s2, N, t)
+
+    df1 = lgv.y.copy()
+    df2 = lgv2.y.copy()
 
     for jj in range(N):
-        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1j * vibfreqS * t - 1j * np.cumtrapz(t, domega[jj, :]))
-
-    Langevin(gamAS, sigAS, N, t)
-    domega = Langevin.y # stochastic frequency trajectories
-
-    for jj in range(N):
-        ct[0, :] = ct[0, :] + (1.0 / (2*N))*np.exp(-1j * vibfreqAS * t - 1j * np.cumtrapz(t, domega[jj,:]))
+        ct[0, :] += (1.0 / (2*N))*np.exp(-1j * f1 * t - 1j * np.cumtrapz(t, df1[jj, :]))
+        ct[0, :] += (1.0 / (2*N))*np.exp(-1j * f2 * t - 1j * np.cumtrapz(t, df2[jj, :]))
 
     # calculate the reciprocal response for time windows of duration tau
     Ntau = Nt / 4
@@ -70,31 +68,12 @@ def StochasticDFT():
 
     # TODO: average filter used for smoothing data
 
-    Y = np.zeros((4, len(f)))
+    cw = fft(np.real(ct), NFFT) / Nt # padding y with NFFT - L zeros
+    cw = fft.fftshift(cw)
+    
+    # TODO: pass through smoothing filter
 
-    for ii in range(3):
-
-        ct_segment = np.real(ct[0, ((ii-1)*Ntau):ii*Ntau])
-        localslope = np.diff(ct_segment) # local slope
-        localconc  = np.diff(localslope) # local concavity
-        jj = 0
-        while localconc[jj] > 0:
-            jj = jj + 1
-        while localslope[jj] > 0:
-            jj = jj + 1
-        ct_segment = np.real(ct[0, ((ii-1)*Ntau + jj):ii*Ntau + jj])
-        # ct_segment = ct_segment / ct_segment(1)
-         
-        Ytemp = fft(np.real(ct_segment), NFFT) / Nt # padding y with NFFT - L zeros
-        Ytemp = fft.fftshift(Ytemp)
-        
-        # TODO: pass Ytemp through smoothing filter
-
-        Y[ii, :] = Ytemp
-        
-    Y[3, :] = []
-
-    t = t / (1160 * (2 * pi * c * 10 ** -15)) # units of fs
+    t = t / (f1 * (2 * pi * constants.c * 10 ** -15)) # units of fs
     w = 2 * pi * f
 
-    return t, ct, w, Y
+    return t, ct, w, cw
