@@ -6,8 +6,6 @@ from math import sqrt, pi
 import unittest
 from Langevin import Langevin
 from FiniteGreen import FiniteGreen
-from SubEnsembles import SubEnsembles
-from StochasticDFT import StochasticDFT
 
 class KuboTester(unittest.TestCase):
     """ test stochastic dynamics calculation """
@@ -40,17 +38,6 @@ class KuboTester(unittest.TestCase):
             mean_test, std_test = self.FiniteGreenBatch(Gx, n_samples, n_batches)
 
         # TODO: add asserts
-
-    def test_stochastic_dft(self):
-        """
-        """
-        f1 = 1160 # cm^-1
-        f2 = 1220
-        n  = 10 # 1000
-        g1 = 10
-        g2 = 20
-
-        t, ct, w, cw = StochasticDFT(f1, f2, g1, g2, n)
 
     def test_zwanzig(self):
         """ Benchmark of Sec. 1.3 from R. Zwanzig's ``Nonequilibrium Statistical Mechanics"

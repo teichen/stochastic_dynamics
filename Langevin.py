@@ -12,7 +12,26 @@ class Langevin(Diffusion):
     def __init__(self, gamma, sigma, n, t):
         super(Langevin, self).__init__(gamma, sigma, n, t)
         """ diffusion via Langevin dynamics with friction
-         Args:
+         
+        See D. J. Higham, SIAM Review 43 (2001), 525-
+        The Euler-Maruyama and Milstein's methods
+
+        ``Strong order" convergence is defined as the convergence of individual 
+        stochastic trajectories onto a known solution
+        ``Weak order" convergence is defined as the convergence of averages over
+        a set of independent stochastic trajectories onto a known solution
+
+        Euler-Maruyama method converges with strong order 1/2 and weak order 1
+        Milstein's method converges with strong order 1
+
+        Ito and Stratonovich integrals are left-hand and mid-point 
+        approximations, respectively.  
+        Ito: \int_{0}^{T}\, h(t)dW(t) ~ 
+                  \sum_{j=0}^{N-1}\, h(t_{j}) ( W(t_{j+1}) - W(t_{j}) )
+        Strat: \int_{0}^{T}\, h(t)dW(t) ~ 
+                  \sum_{j=0}^{N-1}\, h( (t_{j} + t_{j+1})/2 ) ( W(t_{j+1}) - W(t_{j}) )
+
+        Args:
             gamma (double): decay rate
             sigma (double): noise covariance
             n (int): number of trajectories
