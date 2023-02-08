@@ -58,6 +58,10 @@ class Langevin(Diffusion):
                 for context, diffusion subject to friction can be simulated by:
                 y[ii, jj] = y[ii, jj-1] * (1 - gamma * dx/2) / (1 + gamma * dx/2) + f[jj-1] # MID/BBK, Mishra and Schlick
                 y[ii, jj] = y[ii, jj-1] * (1 - dx) + sqrt(2) * kubo * dF[:, jj-1] # Euler-Maruyama method
+        
+                Benchmark of Fig. 4.3 M. Grigoriu ``Applied Non-Gaussian Processes"
+                x[ii, jj] = x[ii, jj-1] + p[ii, jj-1] * self.dt
+                p[ii, jj] = p[ii, jj-1] * (1-2*self.zet*self.w0*self.dt) - (self.w0 ** 2) * x[ii, jj-1] * self.dt + fpts[jj-1]
                 """
 
     def _intensity(self):

@@ -42,53 +42,27 @@ class KuboTester(unittest.TestCase):
     def test_zwanzig(self):
         """ Benchmark of Sec. 1.3 from R. Zwanzig's ``Nonequilibrium Statistical Mechanics"
         """
-        x0 = sqrt(pi*self.g0/(4*self.zet*pow(self.w0, 3)))*random.rand(self.ntraj, 1)
-        p0 = sqrt(pi*self.g0/(4*self.zet*self.w0))*random.rand(self.ntraj, 1)
+        sigma = self.g0 * pi
+
+        # use Langevin class to simulate momentum
+        lgv = Langevin(self.gam, sigma, self.ntraj, self.t)
+        p   = lgv.y
 
         x = np.zeros((self.ntraj, self.npts))
-        p = np.zeros((self.ntraj, self.npts))
 
         for ii in range(self.ntraj):
-            x[ii, 0] = 0 # initial conditions
-            p[ii, 0] = 0
-            
-            fpts = sqrt(self.dt*pi*self.g0) * random.rand(self.npts, 1) # trajectory of noise 
             for jj in range(1, self.npts):
                 x[ii, jj] = x[ii, jj-1] + p[ii, jj-1] * self.dt
-
-                # Grigoriu benchmark excluding the (-(w0 ** 2) * x[ii, jj-1] * dt) term
-                p[ii, jj] = p[ii, jj-1] * (1-2*self.zet*self.w0*self.dt) + fpts[jj-1] 
 
         x2 = np.zeros((self.npts, 1)) # mean of the squared displacement
         for jj in range(self.npts):
             mux    = np.mean(x[:, jj])
             x2[jj] = np.mean((x[:, jj] - mux) ** 2)
 
-        # TODO: add asserts
+        # x2 ~ self.temp * self.t
 
-
-    def test_finite_batches_grigoriu(self):
-        """ Benchmark of Fig. 4.3 M. Grigoriu ``Applied Non-Gaussian Processes"
-        """
-        x0 = sqrt(pi * self.g0 / (4*self.zet*pow(self.w0, 3))) * random.rand(self.ntraj, 1)
-        p0 = sqrt(pi * self.g0 / (4*self.zet*self.w0)) * random.rand(self.ntraj, 1)
-
-        x = np.zeros((self.ntraj, self.npts))
-        p = np.zeros((self.ntraj, self.npts))
-
-        for ii in range(self.ntraj):
-            x[ii, 0] = 0 # initial conditions
-            p[ii, 0] = 0
-            
-            fpts = sqrt(self.dt*pi*self.g0) * random.rand(self.npts, 1) # trajectory of noise 
-            for jj in range(1, self.npts):
-                x[ii, jj] = x[ii, jj-1] + p[ii, jj-1] * self.dt
-                p[ii, jj] = p[ii, jj-1] * (1-2*self.zet*self.w0*self.dt) - (self.w0 ** 2) * x[ii, jj-1] * self.dt + fpts[jj-1]
-
-        x2 = np.zeros((self.npts, 0)) # mean of the squared displacement
-        for jj in range(self.npts):
-            mux    = np.mean(x[:, jj])
-            x2[jj] = np.mean((x[:, jj] - mux) ** 2) 
+        dx2_dt   = np.diff(x2[1:, 0] / self.t[1:] / self.temp)
+        d2x2_dt2 = np.diff(dx2)
 
         # TODO: add asserts
 
